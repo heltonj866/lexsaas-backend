@@ -18,7 +18,11 @@ return new class extends Migration
             $table->string('cpf_cnpj');
             $table->string('telefone')->nullable();
             $table->string('email')->nullable();
-            
+            $table->string('cep')->nullable();
+            $table->string('endereco')->nullable();
+            $table->string('bairro')->nullable();
+            $table->string('cidade')->nullable();
+        
             $table->timestamps();
             
             // Opcional, mas recomendado: Evita cadastrar o mesmo CPF no MESMO escritório

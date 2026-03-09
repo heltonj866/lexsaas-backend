@@ -10,23 +10,29 @@ use App\Http\Controllers\Api\TarefaController;
 use App\Http\Controllers\Api\IAController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NotificacaoController;
+use App\Http\Controllers\Api\ConfiguracaoController;
+use Illuminate\Http\Request;
 
-// Rota Pública
+// 👇 ROTAS PÚBLICAS 👇
+Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::get('/me', function (Request $request) {
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+
+// 👇 ROTAS PROTEGIDAS (Apenas com sessão iniciada) 👇
+Route::middleware('auth:sanctum')->group(function () {
+    
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/configuracoes/equipe', [ConfiguracaoController::class, 'storeMembro']);
+    Route::delete('/configuracoes/equipe/{id}', [ConfiguracaoController::class, 'destroyMembro']);
+    Route::get('/me', function (Request $request) {
         return $request->user();
     });
 
-// Rota para logout (protegida)
-Route::post('/logout', [AuthController::class, 'logout']);
-
-// Todas as rotas protegidas em um único grupo
-Route::middleware('auth:sanctum')->group(function () {
-    
     // Dashboard
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
-    // Módulos Principais (apiResource cria: index, store, show, update, destroy)
+    // Módulos Principais
     Route::apiResource('clientes', ClienteController::class);
     Route::apiResource('processos', ProcessoController::class);
     Route::apiResource('financeiro', HonorarioController::class);
@@ -47,8 +53,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/profile/password', [App\Http\Controllers\API\ProfileController::class, 'updatePassword']);
 
     // Notificações
+    // Rotas de Notificações
     Route::get('/notificacoes', [NotificacaoController::class, 'index']);
-    Route::put('/notificacoes/{id}/lida', [NotificacaoController::class, 'marcarComoLida']);
-    Route::post('/notificacoes/ler-todas', [NotificacaoController::class, 'marcarTodasComoLidas']);
-    
+    Route::put('/notificacoes/ler-todas', [NotificacaoController::class, 'marcarTodasComoLidas']); // Esta rota fixa tem que vir ANTES da rota com {id}
+    Route::put('/notificacoes/{id}/ler', [NotificacaoController::class, 'marcarComoLida']);
+
+    // Rotas de Configurações
+    Route::get('/configuracoes', [ConfiguracaoController::class, 'index']);
+    Route::put('/configuracoes', [ConfiguracaoController::class, 'update']);
 });

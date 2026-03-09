@@ -13,8 +13,8 @@ return new class extends Migration
 {
     Schema::create('notificacoes', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Para quem é o aviso
-        $table->string('tipo'); // Ex: alerta, documento, financeiro
+        $table->foreignId('user_id')->constrained()->onDelete('cascade');
+        $table->string('tipo')->default('geral'); // prazo, documento, processo
         $table->string('titulo');
         $table->text('mensagem');
         $table->boolean('lida')->default(false);

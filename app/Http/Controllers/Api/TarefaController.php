@@ -8,13 +8,10 @@ use Illuminate\Http\Request;
 
 class TarefaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Pega o UUID do escritório do usuário logado
-        $tenantId = auth()->user()->tenant_id;
+        $tenantId = $request->user()->tenant_id;
 
-        // Traz as tarefas do escritório ordenadas pela data de vencimento (as mais urgentes primeiro)
-        // e já carrega os dados do processo e do cliente para o React não ter que fazer requisições extras
         $tarefas = Tarefa::with('processo.cliente')
             ->where('tenant_id', $tenantId)
             ->orderBy('data_vencimento', 'asc')
@@ -25,6 +22,8 @@ class TarefaController extends Controller
 
     public function store(Request $request)
     {
+        $tenantId = $request->user()->tenant_id;
+
         $validated = $request->validate([
             'titulo'          => 'required|string|max:255',
             'descricao'       => 'nullable|string',
@@ -34,23 +33,23 @@ class TarefaController extends Controller
             'processo_id'     => 'nullable|exists:processos,id'
         ]);
 
-        // Injeta a identidade do escritório automaticamente
-        $validated['tenant_id'] = auth()->user()->tenant_id;
+        $validated['tenant_id'] = $tenantId;
+        
+        // TRATAMENTO: Converte string vazia do React em NULL para o banco de dados
+        $validated['processo_id'] = $request->processo_id ?: null;
 
         $tarefa = Tarefa::create($validated);
-
-        // Carrega o relacionamento recém-criado para devolver ao Frontend completo
         $tarefa->load('processo.cliente');
 
         return response()->json($tarefa, 201);
     }
 
-    public function update(Request $request, Tarefa $tarefa)
+    public function update(Request $request, $id)
     {
-        // Trava de segurança SaaS: Garante que a tarefa pertence a este escritório
-        if ($tarefa->tenant_id !== auth()->user()->tenant_id) {
-            return response()->json(['error' => 'Acesso negado'], 403);
-        }
+        $tenantId = $request->user()->tenant_id;
+        
+        // Busca Segura: Garante que a tarefa pertence ao escritório antes de atualizar
+        $tarefa = Tarefa::where('tenant_id', $tenantId)->findOrFail($id);
 
         $validated = $request->validate([
             'titulo'          => 'required|string|max:255',
@@ -60,6 +59,8 @@ class TarefaController extends Controller
             'prioridade'      => 'required|in:baixa,media,alta,urgente',
             'processo_id'     => 'nullable|exists:processos,id'
         ]);
+
+        $validated['processo_id'] = $request->processo_id ?: null;
 
         $tarefa->update($validated);
         $tarefa->load('processo.cliente');
@@ -69,12 +70,18 @@ class TarefaController extends Controller
 
     public function destroy(Tarefa $tarefa)
     {
-        // Trava de segurança SaaS
-        if ($tarefa->tenant_id !== auth()->user()->tenant_id) {
+        $user = auth()->user();
+
+        // 1. Trava do Estagiário
+        if ($user->role === 'estagiario') {
+            return response()->json(['error' => 'Estagiários não têm permissão para excluir registros.'], 403);
+        }
+
+        // 2. Trava de segurança SaaS
+        if ($tarefa->tenant_id !== $user->tenant_id) {
             return response()->json(['error' => 'Acesso negado'], 403);
         }
 
-        // SoftDelete: Apenas marca como deletado no banco de dados
         $tarefa->delete();
 
         return response()->json(null, 204);

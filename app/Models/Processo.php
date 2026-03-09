@@ -20,10 +20,10 @@ class Processo extends Model
     ];
 
     protected $hidden = [
-    'tenant_id',
-    'password',      // No caso do User
-    'remember_token', // No caso do User
-];
+        'tenant_id',
+        'password',       // No caso do User
+        'remember_token', // No caso do User
+    ];
 
     // Relacionamento: Um processo pertence a um cliente
     public function cliente()
@@ -31,22 +31,41 @@ class Processo extends Model
         return $this->belongsTo(Cliente::class);
     }
 
-    /**
- * Escopo para filtrar processos dinamicamente.
- */
-public function scopeFilter($query, array $filters)
-{
-    $query->when($filters['search'] ?? null, function ($query, $search) {
-        $query->where(function ($query) use ($search) {
-            $query->where('titulo', 'like', '%'.$search.'%')
-                  ->orWhere('numero_processo', 'like', '%'.$search.'%')
-                  ->orWhere('descricao', 'like', '%'.$search.'%');
-        });
-    })->when($filters['status'] ?? null, function ($query, $status) {
-        $query->where('status', $status);
-    })->when($filters['cliente_id'] ?? null, function ($query, $clienteId) {
-        $query->where('cliente_id', $clienteId);
-    });
-}
+    // 👇 NOVAS RELAÇÕES ADICIONADAS AQUI 👇
 
+    /**
+     * Relacionamento: Um processo tem várias tarefas/prazos
+     */
+    public function tarefas()
+    {
+        return $this->hasMany(Tarefa::class);
+    }
+
+    /**
+     * Relacionamento: Um processo tem vários documentos anexados
+     */
+    public function documentos()
+    {
+        return $this->hasMany(Documento::class);
+    }
+
+    // 👆 FIM DAS NOVAS RELAÇÕES 👆
+
+    /**
+     * Escopo para filtrar processos dinamicamente.
+     */
+    public function scopeFilter($query, array $filters)
+    {
+        $query->when($filters['search'] ?? null, function ($query, $search) {
+            $query->where(function ($query) use ($search) {
+                $query->where('titulo', 'like', '%'.$search.'%')
+                      ->orWhere('numero_processo', 'like', '%'.$search.'%')
+                      ->orWhere('descricao', 'like', '%'.$search.'%');
+            });
+        })->when($filters['status'] ?? null, function ($query, $status) {
+            $query->where('status', $status);
+        })->when($filters['cliente_id'] ?? null, function ($query, $clienteId) {
+            $query->where('cliente_id', $clienteId);
+        });
+    }
 }

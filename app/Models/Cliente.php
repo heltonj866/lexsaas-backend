@@ -16,6 +16,10 @@ class Cliente extends Model
         'cpf_cnpj',
         'telefone',
         'email',
+        'cep',         
+        'endereco',    
+        'bairro',      
+        'cidade'
     ];
 
     protected $hidden = [

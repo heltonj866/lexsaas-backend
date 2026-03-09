@@ -15,9 +15,12 @@ class Tenant extends Model
 
     protected $fillable = [
         'id',
-        'nome_escritorio',
-        'cnpj_nif',
-        'ativo',
+        'nome',
+        'cnpj',
+        'endereco',
+        'logo_url',
+        'cnj_key',
+        'config_prazos',
     ];
 
     use HasFactory;

@@ -16,12 +16,14 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'telefone',
         'password',
         'tenant_id',
         'role',
-        'oab',           // 👈 Novo
-        'avatar',        // 👈 Novo
-        'preferencias',  // 👈 Novo
+        'oab',          
+        'avatar',        
+        'preferencias',
+        'role',
     ];
 
     protected $hidden = [
